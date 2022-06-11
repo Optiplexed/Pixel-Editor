@@ -15,56 +15,29 @@ public class PixelEditor extends JFrame
    private File currentFile;
    private File homeDirectory;
    private BufferedImage loadedImage;
-   
-   public BufferedImage getLoadedImage()
-      {
-      return loadedImage;
-      }
-   
-   public static class ImageRenderer extends JComponent implements MouseListener,
-   MouseMotionListener
-      {
-      private final PixelEditor parent;
-      private int dragStartX;
-      private int dragStartY;
-      private int offsetX;
-      private int offsetY;
-      
-      public ImageRenderer(PixelEditor parent)
-         {
-         this.parent = parent;
-         this.setBackground(Color.BLACK);
-         this.addMouseListener(this);
-         this.addMouseMotionListener(this);
-         }
-      @Override
-      public void paintComponent(Graphics g) 
-         {  
-         Graphics2D graphicsObj = (Graphics2D) g;
-         
-         graphicsObj.drawImage(parent.loadedImage, offsetX, offsetY, null);
-         }
-      @Override public void mousePressed(MouseEvent e) 
-         { 
-         this.dragStartX = e.getX();
-         this.dragStartY = e.getY();
-         }
-      @Override public void mouseReleased(MouseEvent e) { }
-      @Override public void mouseClicked(MouseEvent e) { }
-      @Override public void mouseExited(MouseEvent e) { }
-      @Override public void mouseEntered(MouseEvent e) { }
-      @Override public void mouseMoved(MouseEvent e) { }
-      @Override public void mouseDragged(MouseEvent e) 
-         { 
-         if(parent.loadedImage != null)
-            {  
-            int offsetX = dragStartX - e.getX();
-            int offsetY = dragStartY - e.getY();
-            System.out.printf("%d %d\n", offsetX, offsetY);
+   private float scale;
 
-            this.repaint();
-            }
-         }
+   public JMenuBar createMenu()
+      {
+      JMenuBar menuBar = new JMenuBar();
+      
+      JMenu fileMenu = new JMenu("File");
+      JMenu editMenu = new JMenu("Edit");
+      JMenu settingsMenu = new JMenu("Settings");
+      JMenu helpMenu = new JMenu("Help");
+      JMenu viewMenu = new JMenu("View");
+      JMenu exitMenu = new JMenu("Exit");
+      
+      menuBar.add(fileMenu);
+      menuBar.add(editMenu);
+      menuBar.add(settingsMenu);
+      menuBar.add(helpMenu);
+      menuBar.add(viewMenu);
+      menuBar.add(exitMenu);
+      
+      fileMenu.add(createMenuItem("Open", this::openFileAction));
+      
+      return menuBar;
       }
    public JPanel createPixelManipulator()
       {
@@ -84,6 +57,87 @@ public class PixelEditor extends JFrame
          item.addActionListener(event);
          }
       return item;
+      }
+   public static class ImageRenderer extends JComponent implements MouseListener,
+   MouseMotionListener, MouseWheelListener
+      {
+      private final PixelEditor parent;
+      private int dragStartX;
+      private int dragStartY;
+      private int offsetX;
+      private int offsetY;
+      private int currX;
+      private int currY;
+      private double scale;
+      
+      public ImageRenderer(PixelEditor parent)
+         {
+         this.parent = parent;
+         this.setBackground(Color.BLACK);
+         this.addMouseListener(this);
+         this.addMouseMotionListener(this);
+         this.addMouseWheelListener(this);
+         }
+      @Override
+      public void paintComponent(Graphics g) 
+         {  
+         Graphics2D graphicsObj = (Graphics2D) g;
+         graphicsObj.scale(scale, scale);
+         graphicsObj.drawImage(
+            parent.getLoadedImage(), 
+            currX + offsetX, 
+            currY + offsetY, 
+            null);
+         }
+      
+      @Override public void mousePressed(MouseEvent e) 
+         { 
+         if(e.getButton() == 3 && parent.getLoadedImage() != null)
+            {
+            this.dragStartX = e.getX();
+            this.dragStartY = e.getY();
+            }
+         }
+      @Override public void mouseReleased(MouseEvent e) 
+         { 
+         if(e.getButton() == 3 && parent.getLoadedImage() != null)
+            {
+            this.currX += offsetX;
+            this.currY += offsetY;
+            }
+         }
+      @Override public void mouseWheelMoved(MouseWheelEvent e)
+         {
+         int notches = e.getWheelRotation();
+         if (notches < 0) 
+            {
+            scale = Math.max(0.1, scale *= 0.9);
+            }
+         else 
+            {
+            scale = Math.min(10, scale *= 1.1);
+            }
+         this.repaint();
+         }
+      @Override public void mouseClicked(MouseEvent e) { }
+      @Override public void mouseExited(MouseEvent e) { }
+      @Override public void mouseEntered(MouseEvent e) { }
+      @Override public void mouseMoved(MouseEvent e) { }
+      @Override public void mouseDragged(MouseEvent e) 
+         { 
+         // The getButton() method does not return the button pressed, so it was omitted
+         if(parent.loadedImage != null && SwingUtilities.isRightMouseButton(e))
+            {  
+            this.offsetX = e.getX() - dragStartX;
+            this.offsetY = e.getY() - dragStartY;
+
+            this.repaint();
+            }
+         }
+      }
+   public BufferedImage getLoadedImage()
+      {
+      return loadedImage;
       }
    public boolean loadImageFromFile(File file)
       {
@@ -122,28 +176,6 @@ public class PixelEditor extends JFrame
          imageRenderer.repaint();
          }
       }
-   public JMenuBar createMenu()
-      {
-      JMenuBar menuBar = new JMenuBar();
-      
-      JMenu fileMenu = new JMenu("File");
-      JMenu editMenu = new JMenu("Edit");
-      JMenu settingsMenu = new JMenu("Settings");
-      JMenu helpMenu = new JMenu("Help");
-      JMenu viewMenu = new JMenu("View");
-      JMenu exitMenu = new JMenu("Exit");
-      
-      menuBar.add(fileMenu);
-      menuBar.add(editMenu);
-      menuBar.add(settingsMenu);
-      menuBar.add(helpMenu);
-      menuBar.add(viewMenu);
-      menuBar.add(exitMenu);
-      
-      fileMenu.add(createMenuItem("Open", this::openFileAction));
-      
-      return menuBar;
-      }
    public void openFile()
       {
       
@@ -151,15 +183,9 @@ public class PixelEditor extends JFrame
    public PixelEditor(String homeURL)
       {
       imageRenderer = new ImageRenderer(this);
-      JPanel pixelManipulator = createPixelManipulator();
-      
-      JSplitPane splitPane = new JSplitPane();
-      splitPane.setLeftComponent(imageRenderer);
-      splitPane.setRightComponent(pixelManipulator);
-      splitPane.setResizeWeight(0.5); 
-      
+            
       this.setJMenuBar(createMenu());
-      this.add(splitPane);
+      this.add(imageRenderer);
       
       try{
          this.homeDirectory = new File(homeURL);
@@ -170,7 +196,7 @@ public class PixelEditor extends JFrame
          }
       
       this.setSize(400, 250);
-      this.setTitle("An Empty Frame");
+      this.setTitle("Image Filter");
       this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
       this.setVisible(true);
       }
