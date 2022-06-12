@@ -147,7 +147,7 @@ public class PixelEditor extends JFrame
          
          this.loadedImage = image;
          System.out.printf("Successfully loaded image from %s\n", file);
-         this.repaint();
+         this.imageRenderer.repaint();
          return true;
          }
       catch(Exception e)
@@ -176,15 +176,48 @@ public class PixelEditor extends JFrame
          imageRenderer.repaint();
          }
       }
-   public void openFile()
+   public JPanel createButtons()
       {
+      JPanel buttonPanel = new JPanel();
+      JButton grayScaleButton = new JButton("Gray Scale");
+      JButton blurButton = new JButton("Blur");
+      JButton sepiaButton = new JButton("Sepia");
       
+      grayScaleButton.addActionListener((e) -> {
+         if(loadedImage != null)
+            {
+            loadedImage = Filters.grayscale(loadedImage);
+            }
+         });
+      
+      blurButton.addActionListener((e) -> {
+         if(loadedImage != null)
+            {
+            loadedImage = Filters.blur(loadedImage, 3);
+            }
+         });
+         
+      sepiaButton.addActionListener((e) -> {
+         if(loadedImage != null)
+            {
+            loadedImage = Filters.sepia(loadedImage);
+            }
+         });
+         
+      buttonPanel.add(grayScaleButton);
+      buttonPanel.add(blurButton);
+      buttonPanel.add(sepiaButton);
+      
+      return buttonPanel;
       }
    public PixelEditor(String homeURL)
       {     
       this.setJMenuBar(createMenu());
-      this.add(this.imageRenderer = new ImageRenderer(this));
-      //appFrame.getContentPane().setLayout(new BorderLayout.CENT);
+      
+      this.getContentPane().setLayout(new BorderLayout());
+      
+      this.add(this.imageRenderer = new ImageRenderer(this), BorderLayout.CENTER);
+      this.add(createButtons(), BorderLayout.SOUTH);
       
       try{
          this.homeDirectory = new File(homeURL);
@@ -201,7 +234,6 @@ public class PixelEditor extends JFrame
       }
    public static void main(String[] args)
       {
-      System.out.println(System.getProperty("user.dir"));
       PixelEditor pixelEditor = new PixelEditor(args.length > 0 ? args[0] : null);
       }
    }
