@@ -145,7 +145,7 @@ public class PixelEditor extends JFrame
       try{
          BufferedImage image = ImageIO.read(file);
          
-         this.loadedImage = image;         
+         this.loadedImage = image;
          System.out.printf("Successfully loaded image from %s\n", file);
          this.repaint();
          return true;
