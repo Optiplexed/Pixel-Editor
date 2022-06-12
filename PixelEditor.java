@@ -98,18 +98,30 @@ public class PixelEditor extends JFrame
             this.dragStartY = e.getY();
             }
          }
+      @Override public void mouseDragged(MouseEvent e) 
+         { 
+         if(parent.loadedImage != null && SwingUtilities.isRightMouseButton(e))
+            {  
+            this.offsetX = (int)((e.getX() - dragStartX) * (1 / scale) / 1.5);
+            this.offsetY = (int)((e.getY() - dragStartY) * (1 / scale) / 1.5);
+
+            this.repaint();
+            }
+         }
       @Override public void mouseReleased(MouseEvent e) 
          { 
          if(e.getButton() == 3 && parent.getLoadedImage() != null)
             {
-            this.currX += offsetX;
-            this.currY += offsetY;
+            currX += this.offsetX;
+            currY += this.offsetY;
+            this.offsetX = 0;
+            this.offsetY = 0;
             }
          }
       @Override public void mouseWheelMoved(MouseWheelEvent e)
          {
          int notches = e.getWheelRotation();
-         if (notches < 0) 
+         if (notches > 0) 
             {
             scale = Math.max(0.1, scale *= 0.9);
             }
@@ -123,17 +135,6 @@ public class PixelEditor extends JFrame
       @Override public void mouseExited(MouseEvent e) { }
       @Override public void mouseEntered(MouseEvent e) { }
       @Override public void mouseMoved(MouseEvent e) { }
-      @Override public void mouseDragged(MouseEvent e) 
-         { 
-         // The getButton() method does not return the button pressed, so it was omitted
-         if(parent.loadedImage != null && SwingUtilities.isRightMouseButton(e))
-            {  
-            this.offsetX = e.getX() - dragStartX;
-            this.offsetY = e.getY() - dragStartY;
-
-            this.repaint();
-            }
-         }
       }
    public BufferedImage getLoadedImage()
       {
@@ -144,10 +145,9 @@ public class PixelEditor extends JFrame
       try{
          BufferedImage image = ImageIO.read(file);
          
-         this.loadedImage = image;
-         Graphics g = loadedImage.getGraphics();
-         
+         this.loadedImage = image;         
          System.out.printf("Successfully loaded image from %s\n", file);
+         this.repaint();
          return true;
          }
       catch(Exception e)
@@ -181,11 +181,10 @@ public class PixelEditor extends JFrame
       
       }
    public PixelEditor(String homeURL)
-      {
-      imageRenderer = new ImageRenderer(this);
-            
+      {     
       this.setJMenuBar(createMenu());
-      this.add(imageRenderer);
+      this.add(this.imageRenderer = new ImageRenderer(this));
+      //appFrame.getContentPane().setLayout(new BorderLayout.CENT);
       
       try{
          this.homeDirectory = new File(homeURL);
@@ -202,6 +201,7 @@ public class PixelEditor extends JFrame
       }
    public static void main(String[] args)
       {
+      System.out.println(System.getProperty("user.dir"));
       PixelEditor pixelEditor = new PixelEditor(args.length > 0 ? args[0] : null);
       }
    }
