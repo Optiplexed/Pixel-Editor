@@ -50,13 +50,12 @@ public class Filters {
                     {
                     for (int j = -1 * (kernel_size / 2); j <= kernel_size / 2; ++j)
                         {
-                            if ((x + i >= 0 && x + i < img.getHeight()) && (y + j >= 0 && y + j < img.getWidth()))
-                                {
+                            if ((x + i >= 0 && x + i < img.getWidth()) && (y + j >= 0 && y + j < img.getHeight())) {
                                 int color = img.getRGB(x + i, y + j);
                                 sumr += (color >> 16) & 0xFF;
                                 sumg += (color >> 8) & 0xFF;
                                 sumb += (color) & 0xFF;
-                                }
+                            }
                         }
                     }
                 new_img.setRGB(x, y, new Color(sumr / weight, sumg / weight, sumb /weight).getRGB());
@@ -82,6 +81,9 @@ public class Filters {
                 int newg = (int)(0.349 * r + 0.686 * g + 0.168 * b);
                 int newb = (int)(0.272 * r + 0.534 * g + 0.131 * b);
 
+                if (newr > 255) newr = 255;
+                if (newg > 255) newg = 255;
+                if (newb > 255) newb = 255;
 
                 try {
                     new_img.setRGB(j, i, new Color(newr, newg, newb).getRGB());
